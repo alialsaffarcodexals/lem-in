@@ -14,3 +14,15 @@ func TestParse(t *testing.T) {
 		t.Fatalf("unexpected start or end")
 	}
 }
+
+func TestParseDuplicateRoom(t *testing.T) {
+	if _, _, _, err := ParseFile("testdata/dup_room.txt"); err == nil {
+		t.Fatalf("expected error for duplicate room")
+	}
+}
+
+func TestParseSelfLink(t *testing.T) {
+	if _, _, _, err := ParseFile("testdata/self_link.txt"); err == nil {
+		t.Fatalf("expected error for self link")
+	}
+}

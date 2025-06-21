@@ -23,6 +23,7 @@ func main() {
 	for _, l := range lines {
 		fmt.Println(l)
 	}
+	fmt.Println()
 	moves := Simulate(path, ants, graph.Start, graph.End)
 	for _, m := range moves {
 		fmt.Println(m)

@@ -78,10 +78,24 @@ func ParseFile(filename string) (*Graph, int, []string, error) {
 				return nil, 0, lines, errors.New("ERROR: invalid data format")
 			}
 			name := fields[0]
+			if _, exists := g.Rooms[name]; exists {
+				return nil, 0, lines, errors.New("ERROR: invalid data format")
+			}
+			for _, r := range g.Rooms {
+				if r.X == x && r.Y == y {
+					return nil, 0, lines, errors.New("ERROR: invalid data format")
+				}
+			}
 			g.Rooms[name] = &Room{Name: name, X: x, Y: y}
 			if next == "start" {
+				if g.Start != "" {
+					return nil, 0, lines, errors.New("ERROR: invalid data format")
+				}
 				g.Start = name
 			} else if next == "end" {
+				if g.End != "" {
+					return nil, 0, lines, errors.New("ERROR: invalid data format")
+				}
 				g.End = name
 			}
 			next = ""
@@ -94,6 +108,17 @@ func ParseFile(filename string) (*Graph, int, []string, error) {
 			}
 			n1 := names[0]
 			n2 := names[1]
+			if n1 == n2 {
+				return nil, 0, lines, errors.New("ERROR: invalid data format")
+			}
+			if g.Rooms[n1] == nil || g.Rooms[n2] == nil {
+				return nil, 0, lines, errors.New("ERROR: invalid data format")
+			}
+			for _, nb := range g.Links[n1] {
+				if nb == n2 {
+					return nil, 0, lines, errors.New("ERROR: invalid data format")
+				}
+			}
 			g.Links[n1] = append(g.Links[n1], n2)
 			g.Links[n2] = append(g.Links[n2], n1)
 			continue
