@@ -167,15 +167,13 @@ The coordinates of the room will be useful only here.
 
 ### Visualizer
 
-This repository includes a simple GUI visualizer. Build and run it by piping the
-output of `lem-in` into `visualizer.go` using the `visualizer` build tag:
+A small terminal visualizer is provided. Pipe the output of `lem-in` into
+`visualizer.go` using the `visualizer` build tag to watch an ASCII
+representation of the ants moving across the colony:
 
 ```bash
 $ go run . test0.txt | go run -tags visualizer visualizer.go
 ```
-
-Then open `http://localhost:8080` in your browser to watch the ants move across
-the colony.
 
 This project will help you learn about :
 

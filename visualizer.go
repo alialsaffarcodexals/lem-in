@@ -5,40 +5,30 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"html/template"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"lemin/lem"
 )
 
-type visData struct {
-	Rooms  []lem.Room
-	Links  [][2]string
-	Start  string
-	End    string
-	Moves  [][]move
-	Width  int
-	Height int
-}
-
+// move represents a single ant move.
 type move struct {
-	Ant  int    `json:"ant"`
-	Room string `json:"room"`
+	Ant  int
+	Room string
 }
 
-func main() {
+func parseInput() (*lem.Graph, int, [][]move, error) {
 	scanner := bufio.NewScanner(os.Stdin)
 	var lines []string
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-
-	// split input lines into description and moves
+	if err := scanner.Err(); err != nil {
+		return nil, 0, nil, err
+	}
 	idx := 0
 	for idx < len(lines) && strings.TrimSpace(lines[idx]) != "" {
 		idx++
@@ -48,13 +38,10 @@ func main() {
 	if idx < len(lines) {
 		moveLines = lines[idx+1:]
 	}
-
-	g, _, _, err := lem.Parse(strings.NewReader(strings.Join(descLines, "\n")))
+	g, ants, _, err := lem.Parse(strings.NewReader(strings.Join(descLines, "\n")))
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return nil, 0, nil, err
 	}
-
 	var moves [][]move
 	for _, l := range moveLines {
 		l = strings.TrimSpace(l)
@@ -81,11 +68,49 @@ func main() {
 			moves = append(moves, step)
 		}
 	}
+	return g, ants, moves, nil
+}
 
-	var rooms []lem.Room
+func draw(step int, g *lem.Graph, positions map[int]string, maxX, maxY int, coordToRoom map[[2]int]string) {
+	fmt.Printf("Step %d:\n", step)
+	for y := 0; y <= maxY; y++ {
+		for x := 0; x <= maxX; x++ {
+			if name, ok := coordToRoom[[2]int{x, y}]; ok {
+				antID := 0
+				for id, room := range positions {
+					if room == name {
+						antID = id
+						break
+					}
+				}
+				if name == g.Start {
+					fmt.Printf("%3s", "S")
+				} else if name == g.End {
+					fmt.Printf("%3s", "E")
+				} else if antID != 0 {
+					fmt.Printf("%3s", fmt.Sprintf("L%d", antID))
+				} else {
+					fmt.Printf("%3s", ".")
+				}
+			} else {
+				fmt.Printf("   ")
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Println()
+}
+
+func main() {
+	g, ants, moves, err := parseInput()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 	maxX, maxY := 0, 0
-	for _, r := range g.Rooms {
-		rooms = append(rooms, *r)
+	coordToRoom := make(map[[2]int]string)
+	for name, r := range g.Rooms {
+		coordToRoom[[2]int{r.X, r.Y}] = name
 		if r.X > maxX {
 			maxX = r.X
 		}
@@ -93,125 +118,21 @@ func main() {
 			maxY = r.Y
 		}
 	}
-	var links [][2]string
-	seen := make(map[[2]string]bool)
-	for a, bs := range g.Links {
-		for _, b := range bs {
-			pair := [2]string{a, b}
-			if a > b {
-				pair = [2]string{b, a}
-			}
-			if !seen[pair] {
-				seen[pair] = true
-				links = append(links, pair)
+
+	positions := make(map[int]string)
+	for ant := 1; ant <= ants; ant++ {
+		positions[ant] = g.Start
+	}
+
+	draw(0, g, positions, maxX, maxY, coordToRoom)
+	for i, step := range moves {
+		for _, m := range step {
+			positions[m.Ant] = m.Room
+			if m.Room == g.End {
+				delete(positions, m.Ant)
 			}
 		}
+		draw(i+1, g, positions, maxX, maxY, coordToRoom)
+		time.Sleep(500 * time.Millisecond)
 	}
-
-	data := visData{
-		Rooms:  rooms,
-		Links:  links,
-		Start:  g.Start,
-		End:    g.End,
-		Moves:  moves,
-		Width:  maxX*40 + 80,
-		Height: maxY*40 + 80,
-	}
-
-	tmpl := template.Must(template.New("page").Parse(pageHTML))
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		js, _ := json.Marshal(data)
-		tmpl.Execute(w, template.JS(js))
-	})
-
-	fmt.Println("Visualizer running at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
 }
-
-const pageHTML = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>lem-in visualizer</title>
-<style>
-  body { font-family: sans-serif; }
-  canvas { border: 1px solid #333; }
-</style>
-</head>
-<body>
-<canvas id="c" width="{{.Width}}" height="{{.Height}}"></canvas>
-<script>
-const data = {{.}};
-const scale = 40;
-const radius = 10;
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-
-function pos(roomName){
-    for (const r of data.Rooms){
-        if (r.Name === roomName) return {x:r.X*scale+40, y:r.Y*scale+40};
-    }
-    return {x:0,y:0};
-}
-
-function draw(step){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.lineWidth = 2;
-    // links
-    ctx.strokeStyle = '#555';
-    for (const l of data.Links){
-        const a = pos(l[0]);
-        const b = pos(l[1]);
-        ctx.beginPath();
-        ctx.moveTo(a.x,a.y);
-        ctx.lineTo(b.x,b.y);
-        ctx.stroke();
-    }
-    // rooms
-    for (const r of data.Rooms){
-        const p = pos(r.Name);
-        ctx.fillStyle = (r.Name===data.Start)?'green':(r.Name===data.End?'red':'white');
-        ctx.strokeStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,radius,0,Math.PI*2);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = '#000';
-        ctx.fillText(r.Name,p.x+radius,p.y);
-    }
-    // ants
-    for (const ant in positions){
-        const room=positions[ant];
-        const p=pos(room);
-        ctx.fillStyle='blue';
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,radius/2,0,Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle='white';
-        ctx.fillText(ant,p.x-4,p.y+4);
-    }
-}
-
-let positions = {};
-let step = 0;
-function advance(){
-    if (step < data.Moves.length){
-        for (const m of data.Moves[step]){
-            positions[m.ant] = m.room;
-            if(m.room===data.End){
-                delete positions[m.ant];
-            }
-        }
-        draw(step);
-        step++;
-        setTimeout(advance,800);
-    } else {
-        draw(step);
-    }
-}
-
-draw(0);
-advance();
-</script>
-</body>
-</html>`
