@@ -1,9 +1,9 @@
-package main
+package lem
 
 import "testing"
 
 func TestBFS(t *testing.T) {
-	g, _, _, err := ParseFile("testdata/test1.txt")
+	g, _, _, err := ParseFile("../testdata/test1.txt")
 	if err != nil {
 		t.Fatalf("parse failed: %v", err)
 	}

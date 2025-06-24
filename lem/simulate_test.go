@@ -1,9 +1,9 @@
-package main
+package lem
 
 import "testing"
 
 func TestSimulate(t *testing.T) {
-	g, ants, _, err := ParseFile("testdata/test1.txt")
+	g, ants, _, err := ParseFile("../testdata/test1.txt")
 	if err != nil {
 		t.Fatalf("parse failed: %v", err)
 	}

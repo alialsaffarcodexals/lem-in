@@ -1,4 +1,4 @@
-package main
+package lem
 
 // BFS finds the shortest path between start and end using breadth-first search.
 // It returns the path as a slice of room names including start and end.

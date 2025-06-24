@@ -1,9 +1,9 @@
-package main
+package lem
 
 import "testing"
 
 func TestParse(t *testing.T) {
-	g, ants, _, err := ParseFile("testdata/test1.txt")
+	g, ants, _, err := ParseFile("../testdata/test1.txt")
 	if err != nil {
 		t.Fatalf("parse failed: %v", err)
 	}
@@ -16,13 +16,13 @@ func TestParse(t *testing.T) {
 }
 
 func TestParseDuplicateRoom(t *testing.T) {
-	if _, _, _, err := ParseFile("testdata/dup_room.txt"); err == nil {
+	if _, _, _, err := ParseFile("../testdata/dup_room.txt"); err == nil {
 		t.Fatalf("expected error for duplicate room")
 	}
 }
 
 func TestParseSelfLink(t *testing.T) {
-	if _, _, _, err := ParseFile("testdata/self_link.txt"); err == nil {
+	if _, _, _, err := ParseFile("../testdata/self_link.txt"); err == nil {
 		t.Fatalf("expected error for self link")
 	}
 }

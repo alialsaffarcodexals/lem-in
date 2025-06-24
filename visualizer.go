@@ -12,10 +12,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"lemin/lem"
 )
 
 type visData struct {
-	Rooms  []Room
+	Rooms  []lem.Room
 	Links  [][2]string
 	Start  string
 	End    string
@@ -47,7 +49,7 @@ func main() {
 		moveLines = lines[idx+1:]
 	}
 
-	g, _, _, err := Parse(strings.NewReader(strings.Join(descLines, "\n")))
+	g, _, _, err := lem.Parse(strings.NewReader(strings.Join(descLines, "\n")))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -80,7 +82,7 @@ func main() {
 		}
 	}
 
-	var rooms []Room
+	var rooms []lem.Room
 	maxX, maxY := 0, 0
 	for _, r := range g.Rooms {
 		rooms = append(rooms, *r)
