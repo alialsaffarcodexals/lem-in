@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -22,16 +23,10 @@ type Room struct {
 	Y    int
 }
 
-// ParseFile parses an ant farm description from filename.
-// It returns the graph, number of ants, the lines of the file and an error if any.
-func ParseFile(filename string) (*Graph, int, []string, error) {
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, 0, nil, err
-	}
-	defer f.Close()
-
-	scanner := bufio.NewScanner(f)
+// Parse parses an ant farm description from the provided reader.
+// It returns the graph, number of ants, the lines read and an error if any.
+func Parse(r io.Reader) (*Graph, int, []string, error) {
+	scanner := bufio.NewScanner(r)
 	var lines []string
 
 	if !scanner.Scan() {
@@ -67,7 +62,6 @@ func ParseFile(filename string) (*Graph, int, []string, error) {
 			continue
 		}
 		if strings.Contains(line, " ") {
-			// room definition
 			fields := strings.Fields(line)
 			if len(fields) != 3 {
 				return nil, 0, lines, errors.New("ERROR: invalid data format")
@@ -129,4 +123,15 @@ func ParseFile(filename string) (*Graph, int, []string, error) {
 		return nil, 0, lines, errors.New("ERROR: invalid data format")
 	}
 	return g, ants, lines, nil
+}
+
+// ParseFile parses an ant farm description from filename.
+// It returns the graph, number of ants, the lines of the file and an error if any.
+func ParseFile(filename string) (*Graph, int, []string, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	defer f.Close()
+	return Parse(f)
 }
