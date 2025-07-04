@@ -165,6 +165,16 @@ Here is an usage example : ./lem-in ant-farm.txt | ./visualizer
 
 The coordinates of the room will be useful only here.
 
+### Visualizer
+
+A small terminal visualizer is provided. Pipe the output of `lem-in` into
+`visualizer.go` using the `visualizer` build tag to watch an ASCII
+representation of the ants moving across the colony:
+
+```bash
+$ go run . test0.txt | go run -tags visualizer visualizer.go
+```
+
 This project will help you learn about :
 
 Algorithmic

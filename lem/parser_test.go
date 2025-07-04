@@ -1,0 +1,28 @@
+package lem
+
+import "testing"
+
+func TestParse(t *testing.T) {
+	g, ants, _, err := ParseFile("../testdata/test1.txt")
+	if err != nil {
+		t.Fatalf("parse failed: %v", err)
+	}
+	if ants != 3 {
+		t.Fatalf("expected 3 ants, got %d", ants)
+	}
+	if g.Start != "0" || g.End != "1" {
+		t.Fatalf("unexpected start or end")
+	}
+}
+
+func TestParseDuplicateRoom(t *testing.T) {
+	if _, _, _, err := ParseFile("../testdata/dup_room.txt"); err == nil {
+		t.Fatalf("expected error for duplicate room")
+	}
+}
+
+func TestParseSelfLink(t *testing.T) {
+	if _, _, _, err := ParseFile("../testdata/self_link.txt"); err == nil {
+		t.Fatalf("expected error for self link")
+	}
+}
